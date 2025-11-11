@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parity Check</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+        .card {
+            padding-top: 40px;
+            padding-bottom: 40px;
+            text-align: center;
+            max-width: 80%;
+        }
+        label {
+            display: block;
+            text-align: center;
+            font-size: 24px;
+            color: #444;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding-top: 14px;
+            padding-bottom: 14px;
+            font-size: 24px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            text-align: center;
+        }
+        input:focus {
+            outline: none;
+            border-color: #4a90e2;
+        }
+        .info {
+            margin-top: 20px;
+            font-size: 24px;
+            line-height: 1.6;
+        }
+        .true { color: #2e8b57; font-weight: bold; }
+        .false { color: #c0392b; font-weight: bold; }
+        .hint {
+            font-size: 14px;
+            color: #888;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <label for="dob">Date of Birth</label>
+    <input type="text" id="dob" placeholder="dd-mm-YYYY" maxlength="10">
+    <br /><br />
+    <label for="evalDate">Date for Eval</label>
+    <input type="text" id="evalDate" placeholder="dd-mm-YYYY" maxlength="10">
+
+    <div class="info" id="result">
+    </div>
+</div>
+
+<script>
+    const DATE_REGEX = /^(\d{2})-(\d{2})-(\d{4})$/;
+
+    function parseDate(str) {
+        if (!DATE_REGEX.test(str)) return null;
+        const [_, d, m, y] = str.match(DATE_REGEX);
+        const date = new Date(y, m - 1, d);
+        if (date.getFullYear() != y || date.getMonth() != m - 1 || date.getDate() != d) {
+            return null;
+        }
+        return date;
+    }
+
+    function formatDate(date) {
+        if (!date || isNaN(date)) return '';
+        const d = String(date.getDate()).padStart(2, '0');
+        const m = String(date.getMonth() + 1).padStart(2, '0');
+        const y = date.getFullYear();
+        return `${d}-${m}-${y}`;
+    }
+
+    function sameParity(date1, date2) {
+        const diffTime = Math.abs(date2 - date1);
+        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+        return diffDays % 2 === 0;
+    }
+
+    function applyMask(input) {
+        let value = input.value.replace(/\D/g, '');
+        if (value.length > 8) value = value.slice(0, 8);
+
+        let formatted = '';
+        if (value.length > 0) formatted += value.slice(0, 2);
+        if (value.length >= 3) formatted += '-' + value.slice(2, 4);
+        if (value.length >= 5) formatted += '-' + value.slice(4, 8);
+
+        input.value = formatted;
+    }
+
+    function updateResult() {
+        const dobStr = document.getElementById('dob').value;
+        const evalStr = document.getElementById('evalDate').value;
+        const resultDiv = document.getElementById('result');
+
+        const dob = parseDate(dobStr);
+        const eval = parseDate(evalStr);
+
+        if (!dob || !eval) {
+            resultDiv.innerHTML = '<span></span>';
+            return;
+        }
+
+        const parity = sameParity(dob, eval);
+        const luck = parity;
+        const matching = !parity;
+
+        resultDiv.innerHTML = `
+            luck: <span class="${luck ? 'true' : 'false'}">${luck}</span><br>
+            dob matching: <span class="${matching ? 'true' : 'false'}">${matching}</span>
+        `;
+    }
+
+    ['dob', 'evalDate'].forEach(id => {
+        const input = document.getElementById(id);
+
+        input.addEventListener('input', function(e) {
+            applyMask(this);
+            updateResult();
+        });
+
+        input.addEventListener('focus', function() {
+            if (!this.value) this.value = '';
+        });
+
+        input.addEventListener('blur', updateResult);
+    });
+
+    document.getElementById('dob').value = "11-11-2025";
+    document.getElementById('evalDate').value = formatDate(new Date());
+
+    updateResult();
+</script>
+
+</body>
+</html>
